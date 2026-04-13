@@ -1,0 +1,13 @@
+@startuml c4-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C4 System Context Diagram - Birthday Greetings
+
+Person(user, "User", "Provides input and reviews birthday greetings")
+System(birthday_system, "Birthday Greetings System", "Checks birthdays and prepares greeting messages")
+System_Ext(email_service, "Email Service", "Delivers greeting emails")
+
+Rel(user, birthday_system, "Uses")
+Rel(birthday_system, email_service, "Sends greeting emails via")
+
+@enduml
