@@ -1,0 +1,5 @@
+@startuml test
+User -> BirthdayService: check birthdays
+BirthdayService -> EmailService: send greeting
+EmailService --> User: confirmation
+@enduml
