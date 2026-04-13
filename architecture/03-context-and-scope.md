@@ -17,6 +17,4 @@ The application is a Python script executed by the OS scheduler. It reads from a
 
 ## 3.3 C4 System Context Diagram
 
-See [`diagrams/c4-context.puml`](diagrams/c4-context.puml).
-
-![C4 Context Diagram](diagrams/c4-context.puml)
+![C4 Context Diagram](diagrams/c4-context.svg)

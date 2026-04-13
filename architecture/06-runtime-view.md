@@ -4,7 +4,7 @@
 
 The primary runtime scenario — one or more contacts have a birthday today.
 
-See [`diagrams/seq-happy-path.puml`](diagrams/seq-happy-path.puml).
+![Happy Path Sequence Diagram](diagrams/seq-happy-path.svg)
 
 1. The scheduler triggers `main.py`.
 2. `main` asks `ContactRepository` for today's birthday contacts.

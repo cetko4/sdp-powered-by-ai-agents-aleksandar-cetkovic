@@ -4,7 +4,7 @@
 
 The system runs on a single machine. There is no server, container runtime, or cloud infrastructure required. The SQLite database is a file on the same machine. The only external dependency is the email service, reached over the network.
 
-See [`diagrams/deployment.puml`](diagrams/deployment.puml).
+![Deployment Diagram](diagrams/deployment.svg)
 
 ## 7.2 Deployment Nodes
 

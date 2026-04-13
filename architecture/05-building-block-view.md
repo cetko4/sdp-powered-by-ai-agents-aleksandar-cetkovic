@@ -4,7 +4,7 @@
 
 The system is a single Python process. There are no separate deployable units beyond the application itself and its external dependencies.
 
-See [`diagrams/c4-container.puml`](diagrams/c4-container.puml).
+![C4 Container Diagram](diagrams/c4-container.svg)
 
 | Container | Technology | Responsibility |
 |-----------|------------|----------------|
@@ -16,7 +16,7 @@ See [`diagrams/c4-container.puml`](diagrams/c4-container.puml).
 
 The application is composed of four modules:
 
-See [`diagrams/c4-component.puml`](diagrams/c4-component.puml).
+![C4 Component Diagram](diagrams/c4-component.svg)
 
 | Component | Module | Responsibility |
 |-----------|--------|----------------|
