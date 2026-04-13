@@ -1,21 +1,17 @@
 @startuml c4-container
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-title C4 Container Diagram - Birthday Greetings
+Person(operator, "Operator / Scheduler", "Triggers the application once per day")
 
-Person(user, "User", "Uses the system to manage birthday greetings")
-
-System_Boundary(birthday_system, "Birthday Greetings System") {
-  Container(web_app, "Web Interface", "HTML/JavaScript", "Allows the user to manage birthday data and trigger processing")
-  Container(app, "Birthday Greetings Application", "Python", "Checks birthdays, prepares greetings, and coordinates message delivery")
-  ContainerDb(db, "Contacts Database", "SQLite", "Stores names, birthdays, and email addresses")
+System_Boundary(systemBoundary, "Birthday Greetings") {
+  Container(app, "Birthday Greetings App", "Python", "Fetches birthday contacts, composes and sends greeting emails")
+  ContainerDb(db, "SQLite Database", "SQLite", "Stores contact records: name, email, date of birth")
 }
 
-System_Ext(email_service, "Email Service", "Delivers greeting emails")
+System_Ext(email, "External Email Service", "Delivers emails to recipients (e.g., SMTP / SendGrid)")
 
-Rel(user, web_app, "Uses")
-Rel(web_app, app, "Sends requests to")
-Rel(app, db, "Reads from and writes to")
-Rel(app, email_service, "Sends greeting emails via")
+Rel(operator, app, "Triggers")
+Rel(app, db, "Reads contacts from", "sqlite3")
+Rel(app, email, "Sends greeting via", "SMTP / HTTPS")
 
 @enduml

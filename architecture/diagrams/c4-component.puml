@@ -1,0 +1,20 @@
+@startuml c4-component
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+ContainerDb_Ext(db, "SQLite Database", "SQLite", "Stores contact records")
+System_Ext(email, "External Email Service", "Delivers emails to recipients")
+
+Container_Boundary(appBoundary, "Birthday Greetings App") {
+  Component(main, "Main / Runner", "main.py", "Entry point; wires and runs the pipeline")
+  Component(repo, "Contact Repository", "contact_repository.py", "Queries contacts with today's birthday")
+  Component(service, "Greeting Service", "greeting_service.py", "Composes the greeting message")
+  Component(sender, "Email Sender", "email_sender.py", "Sends the message via the email service")
+}
+
+Rel(main, repo, "Calls")
+Rel(main, service, "Calls")
+Rel(main, sender, "Calls")
+Rel(repo, db, "Reads from", "sqlite3")
+Rel(sender, email, "Sends via", "SMTP / HTTPS")
+
+@enduml

@@ -1,0 +1,18 @@
+@startuml deployment
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Deployment.puml
+
+Deployment_Node(machine, "Operator Machine", "Linux / macOS / Windows, Python 3.x") {
+  Deployment_Node(cron, "OS Scheduler", "cron") {
+    Container(main, "main.py", "Python", "Entry point; runs the birthday greeting pipeline")
+  }
+  ContainerDb(db, "contacts.db", "SQLite file", "Stores contact records")
+}
+
+Deployment_Node(ext, "External Network", "Internet") {
+  System_Ext(email, "Email Service", "SMTP server or API (e.g., SendGrid)")
+}
+
+Rel(main, db, "Reads", "sqlite3 / local file")
+Rel(main, email, "Sends email via", "SMTP / HTTPS")
+
+@enduml
