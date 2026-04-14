@@ -1,0 +1,17 @@
+@startuml c4-container
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(operator, "Operator / Scheduler", "Triggers the application once per day")
+
+System_Boundary(systemBoundary, "Birthday Greetings") {
+  Container(app, "Birthday Greetings App", "Python", "Fetches birthday contacts, composes and sends greeting emails")
+  ContainerDb(db, "SQLite Database", "SQLite", "Stores contact records: name, email, date of birth")
+}
+
+System_Ext(email, "External Email Service", "Delivers emails to recipients (e.g., SMTP / SendGrid)")
+
+Rel(operator, app, "Triggers")
+Rel(app, db, "Reads contacts from", "sqlite3")
+Rel(app, email, "Sends greeting via", "SMTP / HTTPS")
+
+@enduml

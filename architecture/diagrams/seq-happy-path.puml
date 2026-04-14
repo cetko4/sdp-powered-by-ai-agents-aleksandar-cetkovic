@@ -1,0 +1,28 @@
+@startuml seq-happy-path
+title Birthday Greetings — Happy Path
+
+participant "Scheduler" as sched
+participant "main.py" as main
+participant "ContactRepository" as repo
+database "SQLite" as db
+participant "GreetingService" as svc
+participant "EmailSender" as sender
+participant "Email Service" as ext
+
+sched -> main : trigger
+main -> repo : get_birthday_contacts(today)
+repo -> db : SELECT WHERE month/day = today
+db --> repo : rows
+repo --> main : [Contact, ...]
+
+loop for each contact
+  main -> svc : compose(contact)
+  svc --> main : Message
+  main -> sender : send(message)
+  sender -> ext : SMTP / HTTPS request
+  ext --> sender : 200 OK
+end
+
+main --> sched : exit 0
+
+@enduml

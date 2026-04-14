@@ -1,0 +1,16 @@
+@startuml c4-context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(operator, "Operator / Scheduler", "Triggers the application once per day via cron or manually")
+Person(contact, "Contact", "Receives a birthday greeting email")
+
+System(system, "Birthday Greetings", "Detects birthdays from stored contacts and sends greeting emails")
+SystemDb_Ext(db, "SQLite Database", "Stores contact records: name, email, date of birth")
+System_Ext(email, "External Email Service", "Delivers emails to recipients (e.g., SMTP / SendGrid)")
+
+Rel(operator, system, "Triggers")
+Rel(system, db, "Reads contacts from")
+Rel(system, email, "Sends greeting via")
+Rel(email, contact, "Delivers email to")
+
+@enduml

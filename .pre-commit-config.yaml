@@ -53,3 +53,13 @@ repos:
         language: system
         stages: [commit-msg]
         always_run: true
+
+  # Generate SVG diagrams
+  - repo: local
+    hooks:
+      - id: generate-plantuml
+        name: generate-plantuml
+        entry: bash scripts/generate-plantuml.sh
+        language: system
+        files: \.puml$
+        pass_filenames: false
