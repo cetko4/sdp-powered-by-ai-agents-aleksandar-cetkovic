@@ -3,129 +3,100 @@
 This document provides the story inventory for the Birthday Greetings kata.
 It identifies the story domains, maps them to the architecture, and tracks prioritization and progress for requirements decomposition.
 
+---
+
 ## Story Domains
 
-The following domains are derived from the architecture and the kata requirements:
+Derived from the bounded responsibilities in Chapter 5 Building Block View and Chapter 3 Context and Scope:
 
-- `CONTACT` - responsible for retrieving and managing person data from the configured source
-- `GREETING` - responsible for detecting birthdays and generating birthday greetings
-- `DELIVERY` - responsible for sending greetings through the configured communication channel
-- `REMINDER` - responsible for notifying other people about birthdays when reminder flows are enabled
+| Domain | Responsibility |
+|--------|---------------|
+| `CONTACT` | Retrieving and managing person records (name, email, date of birth) from the SQLite data source |
+| `GREETING` | Detecting today's birthdays and composing personalized greeting messages |
+| `DELIVERY` | Sending composed messages via the external email service |
 
-## Domain-Driven Design Building Blocks
+> `REMINDER` is not present in the architecture and is excluded.
 
-### CONTACT
-Handles access to person records, including first name, last name, date of birth, and email address.
-This domain isolates data access concerns from greeting and delivery logic.
+---
 
-### GREETING
-Encapsulates the core business rules for deciding whether a greeting should be created.
-It includes birthday date matching and special handling for edge cases such as leap-year birthdays.
+## DDD Building Blocks
 
-### DELIVERY
-Represents the outbound communication mechanism used to send messages.
-This domain makes it possible to support multiple delivery channels without changing the greeting rules.
+### Entities
+- `Contact` — a person with identity tracked by their record in the SQLite database; carries name, email, and date of birth (Chapter 5 Building Block View — Contact Repository; Chapter 12 Glossary)
 
-### REMINDER
-Supports additional notification flows beyond direct birthday greetings.
-This includes sending reminders to other people and grouping multiple birthdays into a single reminder.
+### Aggregates
+- None explicitly identified from the architecture
+
+### Value Objects
+- `Message` — the composed greeting content produced by `GreetingService`; defined entirely by its text value, not by identity (Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — Successful Birthday Greeting)
+- `BirthdayDate` — month/day pair used for birthday matching, ignoring year (Chapter 8 Cross-cutting Concepts — Date Handling)
+
+### Domain Services
+- `GreetingService` — domain logic for composing a greeting for a given contact; does not belong to the Contact entity itself (Chapter 5 Building Block View — Greeting Service)
+- `ContactRepository` — domain service for querying contacts whose birthday matches today (Chapter 5 Building Block View — Contact Repository)
+
+---
 
 ## Prioritized Story Inventory
 
 ### Core Stories (Pareto 20%)
 
-These stories provide the essential end-to-end value of the system:
+| ID | Story | Rationale |
+|----|-------|-----------|
+| `CONTACT-STORY-001` | Retrieve contacts from SQLite whose birthday matches today | Required first step of the pipeline; nothing else runs without it |
+| `GREETING-STORY-001` | Detect birthday and compose greeting message | Core business logic; directly delivers the system's primary value |
+| `DELIVERY-STORY-001` | Send composed greeting via external email service | Final step; completes the end-to-end flow |
 
-- `CONTACT-STORY-001`
-  **AS A** system
-  **I WANT** to retrieve person records from the configured data source
-  **SO THAT** I can determine whose birthday is today
+### Supporting Stories (Remaining 80%)
 
-- `GREETING-STORY-001`
-  **AS A** system
-  **I WANT** to detect when a person has a birthday today and generate a greeting
-  **SO THAT** the person receives a birthday message on the correct day
+| ID | Story |
+|----|-------|
+| `GREETING-STORY-002` | Treat Feb 28 as effective birthday for Feb 29 in non-leap years |
+| `CONTACT-STORY-002` | Handle missing or malformed contact records gracefully |
+| `DELIVERY-STORY-002` | Handle email delivery failure with logging and non-zero exit |
 
-- `DELIVERY-STORY-001`
-  **AS A** system
-  **I WANT** to send the generated greeting through the configured delivery channel
-  **SO THAT** the recipient receives the birthday message
-
-### Supporting Stories
-
-These stories extend flexibility, robustness, and non-core scenarios:
-
-- `GREETING-STORY-002`
-  **AS A** system
-  **I WANT** to treat February 28 as the effective birthday for February 29 birthdays in non-leap years
-  **SO THAT** leap-year birthdays are still recognized every year
-
-- `CONTACT-STORY-002`
-  **AS A** system
-  **I WANT** to support multiple contact data sources
-  **SO THAT** the application can switch between flat files and databases
-
-- `DELIVERY-STORY-002`
-  **AS A** system
-  **I WANT** to support multiple delivery channels
-  **SO THAT** greetings can be sent by email or SMS
-
-- `REMINDER-STORY-001`
-  **AS A** system
-  **I WANT** to send birthday reminders to other people
-  **SO THAT** they are informed about current birthdays
-
-- `REMINDER-STORY-002`
-  **AS A** system
-  **I WANT** to group multiple birthdays into a single reminder
-  **SO THAT** notifications are more efficient and easier to read
+---
 
 ## Pareto Prioritization
 
-The minimum valuable flow of the Birthday Greetings kata is covered by these three core stories:
+The minimum valuable flow of the Birthday Greetings system is covered by exactly three core stories:
 
-1. `CONTACT-STORY-001`
-2. `GREETING-STORY-001`
-3. `DELIVERY-STORY-001`
+1. `CONTACT-STORY-001` — loads the data
+2. `GREETING-STORY-001` — applies the business rule and composes the message
+3. `DELIVERY-STORY-001` — delivers the result
 
-These stories together deliver the main outcome of the system:
+These three stories exercise every component in Chapter 5 Building Block View (`ContactRepository`, `GreetingService`, `EmailSender`, `main.py`), cover the primary runtime scenario in Chapter 6 Runtime View — Successful Birthday Greeting, and satisfy FR-1 through FR-3 from Chapter 1 Introduction and Goals.
 
-- load person records
-- detect today's birthdays
-- generate a greeting
-- send the greeting
+All supporting stories address edge cases (leap year, bad data, delivery failure) or extensibility concerns. They add robustness but are not required for the core flow.
 
-All other stories are supporting stories because they improve extensibility, edge-case handling, or additional notification behavior, but are not required for the primary end-to-end flow.
+---
 
 ## Progress Tracking
 
-📊 Pareto Progress: 1/3 core stories drafted
-🎯 Core functionality coverage: ~33% of MVP story definition completed
+📊 Pareto Progress: 3/3 core stories drafted
+🎯 Core functionality coverage: ~100% of MVP story definition completed
 
-### Current Status
+| Story ID | Status | File |
+|----------|--------|------|
+| `GREETING-STORY-001` | ✅ Drafted | `docs/user-stories/greeting.md` |
+| `CONTACT-STORY-001` | ✅ Drafted | `docs/user-stories/contact.md` |
+| `DELIVERY-STORY-001` | ✅ Drafted | `docs/user-stories/delivery.md` |
 
-- `CONTACT-STORY-001` - not yet drafted
-- `GREETING-STORY-001` - drafted manually in `docs/user-stories/greeting.md`
-- `DELIVERY-STORY-001` - not yet drafted
+---
 
 ## Traceability Approach
 
-Each story bundle must maintain traceability to the architecture and to testable outcomes.
+Every story bundle maintains traceability to the architecture and to testable outcomes:
 
-Every story should include:
-
-- a unique story ID following the required naming convention
+- unique story ID following the `{DOMAIN}-STORY-{N}` convention
 - architecture references to real sections from `architecture/`
-- scenarios written in GIVEN-WHEN-THEN format
-- traceable decomposition into Original, FE, BE, and INFRA stories where applicable
+- scenarios in GIVEN-WHEN-THEN format with a `Scenario ID`
+- decomposition into Original, BE, and INFRA sub-stories (no FE — the system has no user-facing interface per Chapter 3 Context and Scope)
 
 ## Story Bundle Files
 
-Story bundles are stored in separate files under `docs/user-stories/` by domain.
-
-Current and planned files:
-
-- `docs/user-stories/greeting.md`
-- `docs/user-stories/contact.md`
-- `docs/user-stories/delivery.md`
-- `docs/user-stories/reminder.md`
+| File | Domain | Status |
+|------|--------|--------|
+| `docs/user-stories/greeting.md` | GREETING | ✅ Complete |
+| `docs/user-stories/contact.md` | CONTACT | ✅ Complete |
+| `docs/user-stories/delivery.md` | DELIVERY | ✅ Complete |

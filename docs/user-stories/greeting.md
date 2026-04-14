@@ -4,45 +4,52 @@
 
 ### GREETING-STORY-001
 **AS A** system
-**I WANT** to detect when a person has a birthday today and create a birthday greeting
-**SO THAT** the person receives a birthday message on the correct day
+**I WANT** to detect when a contact has a birthday today and compose a personalized greeting message
+**SO THAT** the contact receives a birthday message on the correct day
 
-### Scenario: GREETING-STORY-001-S1
-**Architecture Reference:** Chapter 06 Runtime View – Successful Birthday Greeting
+**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — Successful Birthday Greeting; FR-2, FR-3 (Chapter 1 Introduction and Goals)
 
-**GIVEN**
-- a person exists in the contact data source
-- the person's birthday matches today's date
-- the person's email address is available
+---
 
-**WHEN**
-- the birthday greeting process is executed
-
-**THEN**
-- the system identifies the person as today's birthday recipient
-- a birthday greeting is prepared for that person
-- the greeting is passed to the delivery component for sending
-
-### Scenario: GREETING-STORY-001-S2
-**Architecture Reference:** Chapter 06 Runtime View – No Birthdays Today
+### SCENARIO 1: Contact with today's birthday receives a greeting
+**Scenario ID**: GREETING-STORY-001-S1
+**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting
 
 **GIVEN**
-- person records exist in the contact data source
-- none of the birthdays match today's date
+- a contact exists whose date of birth month and day match today's date
+- the contact's name and email address are available
 
 **WHEN**
-- the birthday greeting process is executed
+- the birthday greeting pipeline is executed
 
 **THEN**
-- no greeting is created
-- no delivery request is sent
-- the run completes without errors
+- the system identifies the contact as today's birthday recipient
+- a personalized greeting message is composed for that contact
+- the message is passed to `EmailSender` for delivery
+
+---
+
+### SCENARIO 2: No contacts have a birthday today
+**Scenario ID**: GREETING-STORY-001-S2
+**Architecture Reference**: Chapter 6 Runtime View — No Birthdays Today
+
+**GIVEN**
+- contact records exist in the data source
+- none of the contacts have a date of birth matching today's month and day
+
+**WHEN**
+- the birthday greeting pipeline is executed
+
+**THEN**
+- no greeting message is composed
+- no delivery request is made
+- the process exits normally with code 0
 
 ---
 
 ## Frontend Sub-Stories
 
-Birthday Greetings does not have a user-facing interface, so no frontend sub-stories are required for this story bundle.
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
 
 ---
 
@@ -50,56 +57,66 @@ Birthday Greetings does not have a user-facing interface, so no frontend sub-sto
 
 ### GREETING-BE-001.1
 **AS A** system
-**I WANT** to compare today's date with stored birth dates
-**SO THAT** I can determine which people should receive a birthday greeting
+**I WANT** to determine whether today matches a contact's birthday by comparing month and day
+**SO THAT** only contacts with a birthday today are selected for greeting
 
-#### Scenario: GREETING-BE-001.1-S1
-**Architecture Reference:** Chapter 05 Building Block View – Greeting Service / Contact Processing
+**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 10 Quality Requirements — QS-1
 
-**GIVEN**
-- a person record contains a valid date of birth
-- today's date is available to the application
-
-**WHEN**
-- the system evaluates whether today is that person's birthday
-
-**THEN**
-- the system returns a positive match when month and day correspond
-- the person is marked as eligible for greeting generation
-
-#### Scenario: GREETING-BE-001.1-S2
-**Architecture Reference:** Chapter 05 Building Block View – Greeting Service / Contact Processing
+#### SCENARIO 1: Month and day match — contact is selected
+**Scenario ID**: GREETING-BE-001.1-S1
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling
 
 **GIVEN**
-- a person record contains a valid date of birth
-- today's date does not match the stored birthday
+- a contact record contains a valid date of birth
+- today's month and day are equal to the contact's birth month and day
 
 **WHEN**
-- the system evaluates whether today is that person's birthday
+- the birthday check is evaluated
 
 **THEN**
-- the system returns a negative match
-- the person is excluded from greeting generation
+- the result is a positive match
+- the contact is included in the greeting pipeline
+- the birth year is not considered in the comparison
+
+#### SCENARIO 2: Month and day do not match — contact is excluded
+**Scenario ID**: GREETING-BE-001.1-S2
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — No Birthdays Today
+
+**GIVEN**
+- a contact record contains a valid date of birth
+- today's month and day do not equal the contact's birth month and day
+
+**WHEN**
+- the birthday check is evaluated
+
+**THEN**
+- the result is a negative match
+- the contact is excluded from the greeting pipeline
+
+---
 
 ### GREETING-BE-001.2
 **AS A** system
-**I WANT** to generate the birthday greeting content for each matching person
-**SO THAT** the delivery component can send a complete message
+**I WANT** to compose a personalized greeting message for each contact identified as having a birthday today
+**SO THAT** the delivery component receives a complete, ready-to-send message
 
-#### Scenario: GREETING-BE-001.2-S1
-**Architecture Reference:** Chapter 05 Building Block View – Greeting Generation
+**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — Successful Birthday Greeting; Chapter 10 Quality Requirements — QS-1
+
+#### SCENARIO 1: Greeting message is composed for a matching contact
+**Scenario ID**: GREETING-BE-001.2-S1
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 10 Quality Requirements — QS-1
 
 **GIVEN**
-- a person has been identified as having a birthday today
-- the person's first name is available
+- a contact has been identified as having a birthday today
+- the contact's name is available
 
 **WHEN**
-- the system generates the greeting content
+- `GreetingService.compose(contact)` is called
 
 **THEN**
-- the message contains the correct recipient context
-- the message body is created in the expected greeting format
-- the generated message is ready for delivery
+- a Message object is returned containing the contact's name and a greeting body
+- the message is ready to be passed to `EmailSender`
+- no database or network access occurs during composition
 
 ---
 
@@ -107,85 +124,85 @@ Birthday Greetings does not have a user-facing interface, so no frontend sub-sto
 
 ### GREETING-INFRA-001.1
 **AS A** system
-**I WANT** to read contact records from the configured data source
-**SO THAT** birthday checks can be performed on current person data
+**I WANT** the full greeting pipeline to be wired and executed by `main.py` in a single run
+**SO THAT** contact loading, birthday detection, message composition, and delivery happen in the correct sequence
 
-#### Scenario: GREETING-INFRA-001.1-S1
-**Architecture Reference:** Chapter 03 Context and Scope / Chapter 05 Building Block View
+**Architecture Reference:** Chapter 5 Building Block View — Main / Runner; Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Pipeline executes all steps in order
+**Scenario ID**: GREETING-INFRA-001.1-S1
+**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
 
 **GIVEN**
-- the configured contact data source is available
-- contact records contain name, birth date, and email fields
+- the application is triggered by the OS scheduler or manually
+- `ContactRepository` and `EmailSender` are wired into `main.py`
 
 **WHEN**
-- the birthday greeting process starts
+- `main.py` runs
 
 **THEN**
-- the system successfully loads the contact records
-- the records are made available to the greeting logic
+- contacts are fetched first
+- birthday detection and message composition follow for each matching contact
+- delivery is invoked last for each composed message
+- the process exits with code 0 on success
+
+---
 
 ### GREETING-INFRA-001.2
 **AS A** system
-**I WANT** to send generated greetings through the configured delivery channel
-**SO THAT** birthday messages reach the intended recipient
+**I WANT** `GreetingService` to be a pure function with no I/O dependencies
+**SO THAT** it can be unit-tested without a database or network
 
-#### Scenario: GREETING-INFRA-001.2-S1
-**Architecture Reference:** Chapter 03 Context and Scope / Chapter 05 Building Block View
+**Architecture Reference:** Chapter 4 Solution Strategy — Dependency Direction; ADR-004 (Chapter 9 Architecture Decisions); Chapter 10 Quality Requirements — QS-1, QS-3
+
+#### SCENARIO 1: GreetingService is testable in isolation
+**Scenario ID**: GREETING-INFRA-001.2-S1
+**Architecture Reference**: Chapter 4 Solution Strategy — Dependency Direction; Chapter 10 Quality Requirements — QS-1
 
 **GIVEN**
-- a greeting message has been generated
-- the delivery channel is configured
-- the recipient address is valid
+- a Contact object is constructed in-memory for a test
+- no database connection or network is available
 
 **WHEN**
-- the system invokes the delivery mechanism
+- `GreetingService.compose(contact)` is called directly
 
 **THEN**
-- the message is sent to the intended recipient
-- the delivery attempt is completed through the configured channel
+- a Message object is returned with the expected content
+- no I/O side effects occur
+
+---
 
 ### GREETING-INFRA-001.3
 **AS A** system
-**I WANT** to execute the birthday greeting process on a scheduled run
-**SO THAT** greetings are sent automatically each day
+**I WANT** the pipeline to be triggered daily by the OS scheduler (cron)
+**SO THAT** greetings are sent automatically without manual intervention
 
-#### Scenario: GREETING-INFRA-001.3-S1
-**Architecture Reference:** Chapter 06 Runtime View – Process Execution
+**Architecture Reference:** Chapter 7 Deployment View — OS Scheduler (cron); ADR-005 (Chapter 9 Architecture Decisions); FR-4 (Chapter 1 Introduction and Goals)
 
-**GIVEN**
-- the application is configured to run on schedule
-
-**WHEN**
-- the scheduled execution is triggered
-
-**THEN**
-- the birthday greeting workflow starts automatically
-- contact loading, birthday detection, greeting generation, and delivery are executed in order
-
-### GREETING-INFRA-001.4
-**AS A** system
-**I WANT** to log execution results
-**SO THAT** greeting runs can be monitored and failures can be diagnosed
-
-#### Scenario: GREETING-INFRA-001.4-S1
-**Architecture Reference:** Chapter 07 Deployment View / Operational Concerns
+#### SCENARIO 1: Cron triggers the pipeline at the configured time
+**Scenario ID**: GREETING-INFRA-001.3-S1
+**Architecture Reference**: Chapter 7 Deployment View — OS Scheduler (cron); ADR-005 (Chapter 9 Architecture Decisions)
 
 **GIVEN**
-- the birthday greeting process is running
+- a cron entry is configured to run `main.py` once per day
+- the operator machine is running at the scheduled time
 
 **WHEN**
-- the process completes successfully or fails
+- the scheduled time is reached
 
 **THEN**
-- the system records the execution outcome
-- success and failure information is available for monitoring and troubleshooting
+- cron executes `main.py`
+- the full greeting pipeline runs
+- stdout output (logs) is captured by cron for operator review
 
 ---
 
 ## Traceability Summary
 
-- **Parent Story:** GREETING-STORY-001
-- **Related Backend Stories:** GREETING-BE-001.1, GREETING-BE-001.2
-- **Related Infrastructure Stories:** GREETING-INFRA-001.1, GREETING-INFRA-001.2, GREETING-INFRA-001.3, GREETING-INFRA-001.4
-- **Architecture References:** Chapter 03 Context and Scope, Chapter 05 Building Block View, Chapter 06 Runtime View, Chapter 07 Deployment View
-- **Testable Outcomes:** birthday match detection, greeting generation, delivery execution, scheduled run, logging
+| Field | Value |
+|-------|-------|
+| Parent Story | `GREETING-STORY-001` |
+| Backend Sub-Stories | `GREETING-BE-001.1`, `GREETING-BE-001.2` |
+| Infrastructure Sub-Stories | `GREETING-INFRA-001.1`, `GREETING-INFRA-001.2`, `GREETING-INFRA-001.3` |
+| Architecture References | Chapter 1 FR-2/FR-3/FR-4, Chapter 4 Solution Strategy — Dependency Direction, Chapter 5 Building Block View — Greeting Service / Main Runner, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 7 Deployment View — OS Scheduler, Chapter 8 Cross-cutting Concepts — Date Handling, Chapter 9 ADR-001 / ADR-004 / ADR-005, Chapter 10 QS-1 / QS-3 |
+| Testable Outcomes | birthday match on month/day only (year ignored); no match → no message composed; `GreetingService.compose()` returns correct Message with no I/O; pipeline steps execute in correct order; exit code 0 on success; `GreetingService` unit-testable in isolation; cron triggers daily run |
