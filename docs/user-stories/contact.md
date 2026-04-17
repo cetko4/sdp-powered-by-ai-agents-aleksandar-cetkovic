@@ -134,51 +134,91 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 ## Infrastructure Sub-Stories
 
 ### CONTACT-INFRA-001.1
-**AS A** system
-**I WANT** the SQLite database file to be initialized with the contacts schema
-**SO THAT** the application has a valid data source on first run
+**AS A** developer
+**I WANT** the Docker image to build successfully with all Python dependencies installed
+**SO THAT** the application is ready to run in a container without manual setup
 
-**Architecture Reference:** Chapter 7 Deployment View — Deployment Steps; ADR-002 (Chapter 9 Architecture Decisions)
+**Architecture Reference:** Chapter 7 Deployment View — Deployment Steps; Chapter 2 Constraints — TC-1, TC-2
 
-#### SCENARIO 1: Database is initialized successfully
+#### SCENARIO 1: Docker image builds with dependencies
 **Scenario ID**: CONTACT-INFRA-001.1-S1
 **Architecture Reference**: Chapter 7 Deployment View — Deployment Steps
 
 **GIVEN**
-- Python 3.x is installed on the operator machine
-- `init_db.py` is executed
+- a `Dockerfile` exists at the project root
+- `requirements.txt` lists all runtime dependencies
 
 **WHEN**
-- the initialization script runs
+- `docker build` is executed
 
 **THEN**
-- the SQLite file is created at the configured path
-- the contacts table exists with the required columns (name, email, date of birth)
+- the image builds without error
+- all packages from `requirements.txt` are installed inside the image
+- the SQLite module is available (Python standard library)
 
 ---
 
 ### CONTACT-INFRA-001.2
-**AS A** system
-**I WANT** the `ContactRepository` to receive its database connection via dependency injection
-**SO THAT** unit tests can substitute a fake connection without touching the filesystem
+**AS A** developer
+**I WANT** the pytest suite to run inside the Docker container
+**SO THAT** test results are reproducible in any environment without local Python setup
 
-**Architecture Reference:** ADR-004 (Chapter 9 Architecture Decisions); Chapter 10 Quality Requirements — QS-2
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Testability; ADR-004 (Chapter 9 Architecture Decisions)
 
-#### SCENARIO 1: Fake connection is accepted in tests
+#### SCENARIO 1: Tests execute successfully inside the container
 **Scenario ID**: CONTACT-INFRA-001.2-S1
-**Architecture Reference**: ADR-004 (Chapter 9 Architecture Decisions)
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability; ADR-004 (Chapter 9 Architecture Decisions)
 
 **GIVEN**
-- a fake in-memory SQLite connection is created for testing
-- the connection is passed to `ContactRepository` as a parameter
+- the Docker image has been built
+- the project structure places tests where pytest can discover them (e.g., `tests/` directory with `test_*.py` files)
 
 **WHEN**
-- `get_birthday_contacts(today)` is called
+- `docker run <image> pytest` is executed
 
 **THEN**
-- the repository uses the injected connection
-- no real database file is accessed
-- the correct contacts are returned based on the fake data
+- pytest discovers and runs all test files
+- `ContactRepository` tests pass using an in-memory SQLite connection
+- the container exits with code 0 on success
+
+#### SCENARIO 2: Missing dependency causes test failure at import
+**Scenario ID**: CONTACT-INFRA-001.2-S2
+**Architecture Reference**: Chapter 7 Deployment View — Deployment Steps
+
+**GIVEN**
+- a required package is absent from `requirements.txt`
+
+**WHEN**
+- `docker run <image> pytest` is executed
+
+**THEN**
+- pytest reports an import error identifying the missing package
+- the container exits with a non-zero code
+
+---
+
+### CONTACT-INFRA-001.3
+**AS A** developer
+**I WANT** the SQLite database file to be initialised via a script that can be run inside the container
+**SO THAT** the application has a valid data source when the container starts
+
+**Architecture Reference:** Chapter 7 Deployment View — Deployment Steps; ADR-002 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Database is initialised inside the container
+**Scenario ID**: CONTACT-INFRA-001.3-S1
+**Architecture Reference**: Chapter 7 Deployment View — Deployment Steps; ADR-002 (Chapter 9 Architecture Decisions)
+
+**GIVEN**
+- the Docker image has been built
+- `init_db.py` is present in the image
+
+**WHEN**
+- `docker run <image> python init_db.py` is executed
+
+**THEN**
+- the SQLite file is created at the path configured via environment variable or default
+- the contacts table exists with the required columns (name, email, date of birth)
+- the script exits with code 0
 
 ---
 
@@ -188,6 +228,6 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 |-------|-------|
 | Parent Story | `CONTACT-STORY-001` |
 | Backend Sub-Stories | `CONTACT-BE-001.1`, `CONTACT-BE-001.2` |
-| Infrastructure Sub-Stories | `CONTACT-INFRA-001.1`, `CONTACT-INFRA-001.2` |
-| Architecture References | Chapter 1 FR-1/FR-2, Chapter 5 Building Block View — Contact Repository, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 7 Deployment View — Deployment Steps, Chapter 8 Cross-cutting Concepts — Error Handling, Chapter 9 ADR-002 / ADR-004, Chapter 10 QS-2, Chapter 12 Glossary — Contact |
-| Testable Outcomes | birthday-matched query returns correct contacts; empty list on no match; exception + exit code 1 on DB failure; row-to-Contact mapping; DI allows fake connection in unit tests; DB initialized by `init_db.py` |
+| Infrastructure Sub-Stories | `CONTACT-INFRA-001.1`, `CONTACT-INFRA-001.2`, `CONTACT-INFRA-001.3` |
+| Architecture References | Chapter 1 FR-1/FR-2, Chapter 2 TC-1/TC-2, Chapter 5 Building Block View — Contact Repository, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 7 Deployment View — Deployment Steps, Chapter 8 Cross-cutting Concepts — Error Handling / Testability, Chapter 9 ADR-002 / ADR-004, Chapter 12 Glossary — Contact |
+| Testable Outcomes | birthday-matched query returns correct contacts; empty list on no match; exception + exit code 1 on DB failure; row-to-Contact mapping; Docker image builds with all dependencies; pytest runs inside container with exit code 0; missing dependency surfaces as import error; DB initialised by `init_db.py` inside container |

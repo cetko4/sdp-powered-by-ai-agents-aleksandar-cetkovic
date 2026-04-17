@@ -81,6 +81,9 @@ All supporting stories address edge cases (leap year, bad data, delivery failure
 | `GREETING-STORY-001` | ✅ Drafted | `docs/user-stories/greeting.md` |
 | `CONTACT-STORY-001` | ✅ Drafted | `docs/user-stories/contact.md` |
 | `DELIVERY-STORY-001` | ✅ Drafted | `docs/user-stories/delivery.md` |
+| `GREETING-STORY-002` | ✅ Drafted | `docs/user-stories/greeting.md` |
+| `CONTACT-STORY-002` | ⏳ Pending | — |
+| `DELIVERY-STORY-002` | ⏳ Pending | — |
 
 ---
 

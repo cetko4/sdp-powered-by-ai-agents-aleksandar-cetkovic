@@ -142,101 +142,103 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 ## Infrastructure Sub-Stories
 
 ### DELIVERY-INFRA-001.1
-**AS A** system
-**I WANT** email credentials to be read from environment variables at startup
-**SO THAT** no secrets are stored in source code or the database
+**AS A** developer
+**I WANT** email credentials to be passed to the container via environment variables
+**SO THAT** no secrets are stored in source code or the Docker image
 
 **Architecture Reference:** Chapter 8 Cross-cutting Concepts — Configuration and Secrets; Chapter 7 Deployment View — Deployment Steps
 
-#### SCENARIO 1: All required variables are present
+#### SCENARIO 1: All required variables are present at container startup
 **Scenario ID**: DELIVERY-INFRA-001.1-S1
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Configuration and Secrets
 
 **GIVEN**
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, and `EMAIL_SENDER` are set in the environment
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, and `EMAIL_SENDER` are passed via `docker run -e`
 
 **WHEN**
-- the application starts
+- the container starts and `main.py` runs
 
 **THEN**
 - `EmailSender` is configured with the values from the environment
-- no credentials are written to logs or source files
+- no credentials appear in logs or the image filesystem
 
 #### SCENARIO 2: A required variable is missing
 **Scenario ID**: DELIVERY-INFRA-001.1-S2
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Configuration and Secrets; Chapter 8 Cross-cutting Concepts — Error Handling
 
 **GIVEN**
-- one or more required email environment variables are not set
+- one or more required email environment variables are not set in the container
 
 **WHEN**
-- the application starts
+- the container starts
 
 **THEN**
 - the application raises a configuration error
 - an ERROR log entry identifies the missing variable
-- the process exits with code 1 before attempting any delivery
+- the container exits with code 1 before attempting any delivery
 
 ---
 
 ### DELIVERY-INFRA-001.2
-**AS A** system
-**I WANT** `EmailSender` to be injected into the pipeline rather than instantiated inside `main.py`
-**SO THAT** unit tests can substitute a fake sender without network access
+**AS A** developer
+**I WANT** the pytest suite to verify `EmailSender` behaviour inside the Docker container using a fake sender
+**SO THAT** delivery logic is tested without a real network connection
 
-**Architecture Reference:** ADR-004 (Chapter 9 Architecture Decisions); Chapter 10 Quality Requirements — QS-3; Chapter 8 Cross-cutting Concepts — Testability
+**Architecture Reference:** ADR-004 (Chapter 9 Architecture Decisions); Chapter 8 Cross-cutting Concepts — Testability; Chapter 10 Quality Requirements — QS-3
 
-#### SCENARIO 1: Fake sender is accepted in tests
+#### SCENARIO 1: Fake sender tests run inside the container
 **Scenario ID**: DELIVERY-INFRA-001.2-S1
 **Architecture Reference**: ADR-004 (Chapter 9 Architecture Decisions); Chapter 10 Quality Requirements — QS-3
 
 **GIVEN**
-- a fake `EmailSender` implementation is created for testing
-- the fake is passed to the main pipeline function as a parameter
+- the Docker image has been built
+- delivery tests use a fake `EmailSender` injected as a parameter
 
 **WHEN**
-- the pipeline runs with birthday contacts present
+- `docker run <image> pytest` is executed
 
 **THEN**
+- pytest discovers and runs the delivery tests
 - the fake sender receives exactly the expected messages
 - no real network call is made
-- the test can assert on the messages received by the fake
+- the container exits with code 0
 
 ---
 
 ### DELIVERY-INFRA-001.3
-**AS A** system
-**I WANT** each send attempt to produce a log entry at the appropriate level
-**SO THAT** the operator can confirm delivery or diagnose failures from cron output
+**AS A** developer
+**I WANT** log output from the container to go to stdout
+**SO THAT** the operator can capture delivery confirmations and errors from `docker run` output
 
-**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Logging; Chapter 7 Deployment View — OS Scheduler (cron)
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Logging; Chapter 7 Deployment View — Deployment Steps
 
-#### SCENARIO 1: Successful send is logged at INFO
+#### SCENARIO 1: Successful send is logged at INFO to stdout
 **Scenario ID**: DELIVERY-INFRA-001.3-S1
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Logging
 
 **GIVEN**
-- a greeting message is sent successfully
+- the container is running and a greeting message is sent successfully
 
 **WHEN**
 - `EmailSender.send(message)` returns without error
 
 **THEN**
-- an INFO log entry is written identifying the recipient and confirming the send
+- an INFO log entry is written to stdout identifying the recipient
+- the log is visible in `docker run` terminal output
 
-#### SCENARIO 2: Failed send is logged at ERROR
+#### SCENARIO 2: Failed send is logged at ERROR to stdout
 **Scenario ID**: DELIVERY-INFRA-001.3-S2
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Logging; Chapter 8 Cross-cutting Concepts — Error Handling
 
 **GIVEN**
-- `EmailSender.send(message)` raises an exception
+- `EmailSender.send(message)` raises an exception inside the container
 
 **WHEN**
 - `main.py` catches the exception
 
 **THEN**
-- an ERROR log entry is written including the contact details and failure reason
-- log output goes to stdout so cron can capture it
+- an ERROR log entry including contact details and failure reason is written to stdout
+- the container exits with code 1
 
 ---
 
@@ -248,4 +250,4 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 | Backend Sub-Stories | `DELIVERY-BE-001.1`, `DELIVERY-BE-001.2` |
 | Infrastructure Sub-Stories | `DELIVERY-INFRA-001.1`, `DELIVERY-INFRA-001.2`, `DELIVERY-INFRA-001.3` |
 | Architecture References | Chapter 1 FR-3, Chapter 5 Building Block View — Email Sender / Main Runner, Chapter 6 Runtime View — Successful Birthday Greeting / Email Delivery Failure, Chapter 7 Deployment View — Deployment Steps / OS Scheduler, Chapter 8 Cross-cutting Concepts — Configuration and Secrets / Error Handling / Logging / Testability, Chapter 9 ADR-001 / ADR-003 / ADR-004, Chapter 10 QS-3 |
-| Testable Outcomes | message transmitted to external service; exception raised and propagated on failure; exit code 1 on delivery error; N contacts → N send calls; credentials from env vars only; missing env var → exit code 1; fake sender usable in unit tests; INFO log on success; ERROR log with contact details on failure |
+| Testable Outcomes | message transmitted to external service; exception raised and propagated on failure; exit code 1 on delivery error; N contacts → N send calls; credentials from container env vars only; missing env var → container exits with code 1; fake sender tests run inside Docker with no network; INFO log to stdout on success; ERROR log to stdout with contact details on failure |
