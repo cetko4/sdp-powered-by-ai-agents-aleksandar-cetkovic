@@ -123,33 +123,32 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 ## Infrastructure Sub-Stories
 
 ### GREETING-INFRA-001.1
-**AS A** system
-**I WANT** the full greeting pipeline to be wired and executed by `main.py` in a single run
-**SO THAT** contact loading, birthday detection, message composition, and delivery happen in the correct sequence
+**AS A** developer
+**I WANT** the project structure to support pytest discovery inside the Docker container
+**SO THAT** all greeting logic tests are found and executed automatically
 
-**Architecture Reference:** Chapter 5 Building Block View — Main / Runner; Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Testability; Chapter 4 Solution Strategy — Dependency Direction; ADR-004 (Chapter 9 Architecture Decisions)
 
-#### SCENARIO 1: Pipeline executes all steps in order
+#### SCENARIO 1: pytest discovers greeting tests inside the container
 **Scenario ID**: GREETING-INFRA-001.1-S1
-**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability; ADR-004 (Chapter 9 Architecture Decisions)
 
 **GIVEN**
-- the application is triggered by the OS scheduler or manually
-- `ContactRepository` and `EmailSender` are wired into `main.py`
+- the Docker image has been built
+- test files for `GreetingService` follow the `test_*.py` naming convention under the `tests/` directory
 
 **WHEN**
-- `main.py` runs
+- `docker run <image> pytest` is executed
 
 **THEN**
-- contacts are fetched first
-- birthday detection and message composition follow for each matching contact
-- delivery is invoked last for each composed message
-- the process exits with code 0 on success
+- pytest discovers all greeting test files without additional configuration
+- `GreetingService` tests run using only in-memory objects (no I/O)
+- the container exits with code 0 when all tests pass
 
 ---
 
 ### GREETING-INFRA-001.2
-**AS A** system
+**AS A** developer
 **I WANT** `GreetingService` to be a pure function with no I/O dependencies
 **SO THAT** it can be unit-tested without a database or network
 
@@ -174,26 +173,28 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 ### GREETING-INFRA-001.3
 **AS A** system
-**I WANT** the pipeline to be triggered daily by the OS scheduler (cron)
-**SO THAT** greetings are sent automatically without manual intervention
+**I WANT** the full greeting pipeline to be wired and executed by `main.py` in a single container run
+**SO THAT** contact loading, birthday detection, message composition, and delivery happen in the correct sequence
 
-**Architecture Reference:** Chapter 7 Deployment View — OS Scheduler (cron); ADR-005 (Chapter 9 Architecture Decisions); FR-4 (Chapter 1 Introduction and Goals)
+**Architecture Reference:** Chapter 5 Building Block View — Main / Runner; Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
 
-#### SCENARIO 1: Cron triggers the pipeline at the configured time
+#### SCENARIO 1: Pipeline executes all steps in order inside the container
 **Scenario ID**: GREETING-INFRA-001.3-S1
-**Architecture Reference**: Chapter 7 Deployment View — OS Scheduler (cron); ADR-005 (Chapter 9 Architecture Decisions)
+**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting; ADR-001 (Chapter 9 Architecture Decisions)
 
 **GIVEN**
-- a cron entry is configured to run `main.py` once per day
-- the operator machine is running at the scheduled time
+- the Docker image has been built
+- the container is started with the required environment variables set
+- the SQLite database file is available (via volume mount or pre-initialised in the image)
 
 **WHEN**
-- the scheduled time is reached
+- `docker run <image> python main.py` is executed
 
 **THEN**
-- cron executes `main.py`
-- the full greeting pipeline runs
-- stdout output (logs) is captured by cron for operator review
+- contacts are fetched first
+- birthday detection and message composition follow for each matching contact
+- delivery is invoked last for each composed message
+- the container exits with code 0 on success
 
 ---
 
@@ -204,5 +205,155 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 | Parent Story | `GREETING-STORY-001` |
 | Backend Sub-Stories | `GREETING-BE-001.1`, `GREETING-BE-001.2` |
 | Infrastructure Sub-Stories | `GREETING-INFRA-001.1`, `GREETING-INFRA-001.2`, `GREETING-INFRA-001.3` |
-| Architecture References | Chapter 1 FR-2/FR-3/FR-4, Chapter 4 Solution Strategy — Dependency Direction, Chapter 5 Building Block View — Greeting Service / Main Runner, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 7 Deployment View — OS Scheduler, Chapter 8 Cross-cutting Concepts — Date Handling, Chapter 9 ADR-001 / ADR-004 / ADR-005, Chapter 10 QS-1 / QS-3 |
-| Testable Outcomes | birthday match on month/day only (year ignored); no match → no message composed; `GreetingService.compose()` returns correct Message with no I/O; pipeline steps execute in correct order; exit code 0 on success; `GreetingService` unit-testable in isolation; cron triggers daily run |
+| Architecture References | Chapter 1 FR-2/FR-3, Chapter 4 Solution Strategy — Dependency Direction, Chapter 5 Building Block View — Greeting Service / Main Runner, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 8 Cross-cutting Concepts — Date Handling / Testability, Chapter 9 ADR-001 / ADR-004, Chapter 10 QS-1 / QS-3 |
+| Testable Outcomes | birthday match on month/day only (year ignored); no match → no message composed; `GreetingService.compose()` returns correct Message with no I/O; pytest discovers greeting tests inside container; `GreetingService` unit-testable in isolation; pipeline steps execute in correct order inside container; exit code 0 on success |
+
+---
+
+# GREETING Story Bundle — GREETING-STORY-002
+
+## Original Story
+
+### GREETING-STORY-002
+**AS A** system
+**I WANT** to treat February 28 as the effective birthday for contacts born on February 29 in non-leap years
+**SO THAT** those contacts still receive a greeting every year
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Date Handling
+
+---
+
+### SCENARIO 1: Feb 29 contact is greeted on Feb 28 in a non-leap year
+**Scenario ID**: GREETING-STORY-002-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact has a date of birth of February 29
+- today's date is February 28 in a non-leap year
+
+**WHEN**
+- the birthday check is evaluated for that contact
+
+**THEN**
+- the contact is treated as a match
+- a greeting message is composed and passed to `EmailSender`
+
+---
+
+### SCENARIO 2: Feb 29 contact is greeted on Feb 29 in a leap year
+**Scenario ID**: GREETING-STORY-002-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact has a date of birth of February 29
+- today's date is February 29 in a leap year
+
+**WHEN**
+- the birthday check is evaluated for that contact
+
+**THEN**
+- the contact is matched on their actual birthday
+- a greeting message is composed and passed to `EmailSender`
+
+---
+
+### SCENARIO 3: Feb 29 contact is not greeted on Feb 28 in a leap year
+**Scenario ID**: GREETING-STORY-002-S3
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact has a date of birth of February 29
+- today's date is February 28 in a leap year
+
+**WHEN**
+- the birthday check is evaluated for that contact
+
+**THEN**
+- the contact is not matched
+- no greeting is composed or sent
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
+
+---
+
+## Backend Sub-Stories
+
+### GREETING-BE-002.1
+**AS A** system
+**I WANT** the birthday matching logic to apply the Feb 28 substitution rule for Feb 29 birthdays in non-leap years
+**SO THAT** the correct effective date is used during comparison
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 5 Building Block View — Greeting Service
+
+#### SCENARIO 1: Effective date is Feb 28 when year is non-leap
+**Scenario ID**: GREETING-BE-002.1-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact's date of birth is February 29
+- the current year is not a leap year
+
+**WHEN**
+- the effective birthday date is computed
+
+**THEN**
+- the effective date is February 28 of the current year
+- the comparison proceeds against February 28
+
+#### SCENARIO 2: Effective date is Feb 29 when year is a leap year
+**Scenario ID**: GREETING-BE-002.1-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact's date of birth is February 29
+- the current year is a leap year
+
+**WHEN**
+- the effective birthday date is computed
+
+**THEN**
+- the effective date remains February 29
+- no substitution is applied
+
+---
+
+## Infrastructure Sub-Stories
+
+### GREETING-INFRA-002.1
+**AS A** developer
+**I WANT** the leap-year edge-case tests to run inside the Docker container
+**SO THAT** the Feb 28/29 substitution rule is verified in the same environment as all other tests
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 8 Cross-cutting Concepts — Testability
+
+#### SCENARIO 1: Leap-year tests are discovered and pass inside the container
+**Scenario ID**: GREETING-INFRA-002.1-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability
+
+**GIVEN**
+- the Docker image has been built
+- test files covering the Feb 28/29 rule follow the `test_*.py` naming convention under `tests/`
+
+**WHEN**
+- `docker run <image> pytest` is executed
+
+**THEN**
+- pytest discovers and runs the leap-year scenario tests
+- all three scenarios (non-leap match, leap match, leap non-match) pass
+- the container exits with code 0
+
+---
+
+## Traceability Summary
+
+| Field | Value |
+|-------|-------|
+| Parent Story | `GREETING-STORY-002` |
+| Backend Sub-Stories | `GREETING-BE-002.1` |
+| Infrastructure Sub-Stories | `GREETING-INFRA-002.1` |
+| Architecture References | Chapter 8 Cross-cutting Concepts — Date Handling / Testability, Chapter 5 Building Block View — Greeting Service |
+| Testable Outcomes | Feb 29 contact matched on Feb 28 in non-leap year; Feb 29 contact matched on Feb 29 in leap year; Feb 29 contact not matched on Feb 28 in leap year; leap-year tests run and pass inside Docker container |
