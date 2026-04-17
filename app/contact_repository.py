@@ -1,3 +1,5 @@
+from datetime import date
+
 from app.contact import Contact
 
 
@@ -11,4 +13,6 @@ class ContactRepository:
             "SELECT name, email, dob FROM contacts WHERE strftime('%m-%d', dob) = ?",
             (month_day,),
         ).fetchall()
-        return [Contact(name=r[0], email=r[1], dob=r[2]) for r in rows]
+        return [
+            Contact(name=r[0], email=r[1], dob=date.fromisoformat(r[2])) for r in rows
+        ]
