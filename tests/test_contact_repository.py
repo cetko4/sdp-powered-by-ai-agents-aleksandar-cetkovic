@@ -32,3 +32,23 @@ def test_contact_be_001_1_s1_query_returns_matching_rows():
     # THEN only the matching row is returned; year is not considered
     assert len(results) == 1  # nosec B101
     assert results[0].name == "Alice"  # nosec B101
+
+
+# Story: CONTACT-STORY-001 / Sub-story: CONTACT-BE-001.1 / Scenario: CONTACT-BE-001.1-S2
+def test_contact_be_001_1_s2_query_returns_empty_list_when_no_match():
+    # GIVEN a SQLite connection with contacts whose dob does NOT match today
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE contacts (name TEXT, email TEXT, dob TEXT)")
+    today = date(2026, 4, 17)
+    conn.execute(
+        "INSERT INTO contacts VALUES (?, ?, ?)",
+        ("Bob", "bob@example.com", "1985-06-01"),  # does NOT match
+    )
+    conn.commit()
+
+    # WHEN the SELECT query is executed via ContactRepository
+    repo = ContactRepository(conn)
+    results = repo.get_birthday_contacts(today)
+
+    # THEN an empty list is returned and no exception is raised
+    assert results == []  # nosec B101
