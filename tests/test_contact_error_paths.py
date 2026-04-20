@@ -15,9 +15,8 @@ def test_contact_be_002_1_s1_missing_db_raises_exception():
     # GIVEN the path configured for the SQLite file does not exist
     repo = ContactRepository("/nonexistent/path/contacts.db")
 
-    # WHEN get_birthday_contacts is called
-    # THEN an exception is raised and propagates (not swallowed)
-    with pytest.raises((OSError, Exception)):
+    # WHEN get_birthday_contacts is called / THEN an exception is raised
+    with pytest.raises(FileNotFoundError):
         repo.get_birthday_contacts(date(2026, 4, 20))
 
 
