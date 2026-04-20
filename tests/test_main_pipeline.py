@@ -25,3 +25,19 @@ def test_contact_be_002_2_s1_repository_exception_is_caught_and_logged(caplog):
 
     assert exc_info.value.code == 1  # nosec B101
     assert any("ERROR" in r.levelname for r in caplog.records)  # nosec B101
+
+
+# Story: CONTACT-BE-002.2 / Scenario: CONTACT-BE-002.2-S2
+def test_contact_be_002_2_s2_malformed_row_exception_is_caught_and_logged(caplog):
+    # GIVEN the database is accessible but row mapping raises ValueError
+    repo = MagicMock()
+    repo.get_birthday_contacts.side_effect = ValueError("missing required field")
+
+    # WHEN main.run(repo) executes the pipeline
+    with pytest.raises(SystemExit) as exc_info:
+        with caplog.at_level(logging.ERROR):
+            main.run(repo)
+
+    # THEN exception is caught, ERROR is logged, exit code is 1, no send attempted
+    assert exc_info.value.code == 1  # nosec B101
+    assert any("ERROR" in r.levelname for r in caplog.records)  # nosec B101
