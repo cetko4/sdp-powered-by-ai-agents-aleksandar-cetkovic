@@ -154,20 +154,21 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 **Architecture Reference:** Chapter 4 Solution Strategy — Dependency Direction; ADR-004 (Chapter 9 Architecture Decisions); Chapter 10 Quality Requirements — QS-1, QS-3
 
-#### SCENARIO 1: GreetingService is testable in isolation
+#### SCENARIO 1: GreetingService is testable in isolation inside the container
 **Scenario ID**: GREETING-INFRA-001.2-S1
 **Architecture Reference**: Chapter 4 Solution Strategy — Dependency Direction; Chapter 10 Quality Requirements — QS-1
 
 **GIVEN**
-- a Contact object is constructed in-memory for a test
-- no database connection or network is available
+- the Docker image has been built
+- a test constructs a Contact object in-memory with no database connection or network available
 
 **WHEN**
-- `GreetingService.compose(contact)` is called directly
+- `docker run <image> pytest tests/test_greeting_service.py` is executed
 
 **THEN**
-- a Message object is returned with the expected content
+- `GreetingService.compose(contact)` returns a Message object with the expected content
 - no I/O side effects occur
+- the container exits with code 0
 
 ---
 
