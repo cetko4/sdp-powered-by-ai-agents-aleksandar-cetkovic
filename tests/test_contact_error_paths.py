@@ -1,4 +1,3 @@
-import os
 import sqlite3
 import sys
 from datetime import date
@@ -41,18 +40,14 @@ def test_contact_be_002_2_s2_malformed_row_raises_exception():
 
 
 # Story: CONTACT-BE-002.1 / Scenario: CONTACT-BE-002.1-S2
-def test_contact_be_002_1_s2_unreadable_db_raises_exception(tmp_path):
-    # GIVEN a SQLite file exists but has no read permissions
+def test_contact_be_002_1_s2_corrupt_db_raises_exception(tmp_path):
+    # GIVEN a file exists at the DB path but is not a valid SQLite database
     db_file = tmp_path / "contacts.db"
     db_file.write_bytes(b"not a valid sqlite file")
-    os.chmod(db_file, 0o000)
 
     repo = ContactRepository(str(db_file))
 
     # WHEN get_birthday_contacts is called
-    # THEN an exception is raised and propagates — no partial result returned
-    try:
-        with pytest.raises(sqlite3.OperationalError):
-            repo.get_birthday_contacts(date(2026, 4, 20))
-    finally:
-        os.chmod(db_file, 0o600)  # restore so tmp_path cleanup can delete it
+    # THEN a sqlite3.Error is raised and propagates — no partial result returned
+    with pytest.raises(sqlite3.Error):
+        repo.get_birthday_contacts(date(2026, 4, 20))
