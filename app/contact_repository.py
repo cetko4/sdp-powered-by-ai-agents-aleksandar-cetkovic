@@ -1,3 +1,4 @@
+import calendar
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -27,9 +28,13 @@ class ContactRepository:
                 "contacts table contains rows with missing required fields"
             )
         month_day = today.strftime("%m-%d")
+        params = [month_day]
+        if month_day == "02-28" and not calendar.isleap(today.year):
+            params.append("02-29")
+        placeholders = ",".join("?" * len(params))
         rows = conn.execute(
-            "SELECT name, email, dob FROM contacts WHERE strftime('%m-%d', dob) = ?",
-            (month_day,),
+            f"SELECT name, email, dob FROM contacts WHERE strftime('%m-%d', dob) IN ({placeholders})",  # noqa: S608
+            params,
         ).fetchall()
         return [
             Contact(name=r[0], email=r[1], dob=date.fromisoformat(r[2])) for r in rows
