@@ -38,3 +38,20 @@ def test_greeting_story_002_s1_feb29_contact_greeted_on_feb28_non_leap_year():
     assert matched is True  # nosec B101
     assert message is not None  # nosec B101
     assert "Bob" in message.body  # nosec B101
+
+
+# Story: GREETING-STORY-002
+# Scenario: GREETING-STORY-002-S2
+def test_greeting_story_002_s2_feb29_contact_greeted_on_feb29_in_leap_year():
+    # GIVEN a contact born on Feb 29 and today is Feb 29 in a leap year
+    contact = Contact(name="Carol", email="carol@example.com", dob=date(1992, 2, 29))
+    today = date(2028, 2, 29)  # 2028 is a leap year
+
+    # WHEN the birthday check is evaluated and a greeting is composed
+    matched = is_birthday_today(contact.dob, today)
+    message = GreetingService().compose(contact) if matched else None
+
+    # THEN the contact is matched on their actual birthday and a greeting is produced
+    assert matched is True  # nosec B101
+    assert message is not None  # nosec B101
+    assert "Carol" in message.body  # nosec B101
