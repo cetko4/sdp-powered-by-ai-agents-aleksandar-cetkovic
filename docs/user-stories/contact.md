@@ -231,3 +231,223 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 | Infrastructure Sub-Stories | `CONTACT-INFRA-001.1`, `CONTACT-INFRA-001.2`, `CONTACT-INFRA-001.3` |
 | Architecture References | Chapter 1 FR-1/FR-2, Chapter 2 TC-1/TC-2, Chapter 5 Building Block View — Contact Repository, Chapter 6 Runtime View — Successful Birthday Greeting / No Birthdays Today, Chapter 7 Deployment View — Deployment Steps, Chapter 8 Cross-cutting Concepts — Error Handling / Testability, Chapter 9 ADR-002 / ADR-004, Chapter 12 Glossary — Contact |
 | Testable Outcomes | birthday-matched query returns correct contacts; empty list on no match; exception + exit code 1 on DB failure; row-to-Contact mapping; Docker image builds with all dependencies; pytest runs inside container with exit code 0; missing dependency surfaces as import error; DB initialised by `init_db.py` inside container |
+
+---
+
+# CONTACT Story Bundle — CONTACT-STORY-002
+
+## Original Story
+
+### CONTACT-STORY-002
+**AS A** system
+**I WANT** to handle a missing, unreadable, or malformed contact data source gracefully
+**SO THAT** the pipeline fails fast with a clear error and a non-zero exit code instead of silently producing incorrect results
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 6 Runtime View — Email Delivery Failure (error propagation pattern); Chapter 5 Building Block View — Contact Repository / Main Runner
+
+---
+
+### SCENARIO 1: Database file is missing at container startup
+**Scenario ID**: CONTACT-STORY-002-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling
+
+**GIVEN**
+- the Docker image has been built
+- no SQLite database file is present at the expected path (no volume mount, no pre-initialised DB)
+
+**WHEN**
+- `docker run <image> python main.py` is executed
+
+**THEN**
+- `ContactRepository` raises an exception
+- `main.py` catches it, logs an ERROR entry identifying the missing database
+- the container exits with code 1
+
+---
+
+### SCENARIO 2: Contact row is malformed
+**Scenario ID**: CONTACT-STORY-002-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 5 Building Block View — Contact Repository
+
+**GIVEN**
+- the SQLite database is accessible
+- one or more rows are missing a required field (name, email, or date of birth)
+
+**WHEN**
+- `ContactRepository.get_birthday_contacts(today)` processes the result set
+
+**THEN**
+- an exception is raised for the malformed row
+- `main.py` logs an ERROR entry and exits with code 1
+- no partial greeting is sent
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
+
+---
+
+## Infrastructure Sub-Stories
+
+### CONTACT-INFRA-002.1
+**AS A** developer
+**I WANT** the error-path tests to run inside the Docker container
+**SO THAT** missing-DB and malformed-row failure behaviour is verified in the same containerised environment as all other tests
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 8 Cross-cutting Concepts — Testability; ADR-004 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Error-path tests are discovered and pass inside the container
+**Scenario ID**: CONTACT-INFRA-002.1-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability; ADR-004 (Chapter 9 Architecture Decisions)
+
+**GIVEN**
+- the Docker image has been built
+- test files covering missing-DB and malformed-row cases follow the `test_*.py` naming convention under `tests/`
+
+**WHEN**
+- `docker run <image> pytest` is executed
+
+**THEN**
+- pytest discovers and runs the error-path tests
+- all scenarios (missing DB, malformed row) pass
+- the container exits with code 0
+
+#### SCENARIO 2: Missing database causes non-zero container exit
+**Scenario ID**: CONTACT-INFRA-002.1-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 6 Runtime View — Email Delivery Failure
+
+**GIVEN**
+- the Docker image has been built
+- no SQLite file is present (no `-v` volume mount, no pre-seeded DB in the image)
+
+**WHEN**
+- `docker run <image> python main.py` is executed
+
+**THEN**
+- an ERROR log entry identifying the missing database is written to stdout
+- the container exits with code 1
+
+---
+
+## Backend Sub-Stories
+
+### CONTACT-BE-002.1
+**AS A** system
+**I WANT** `ContactRepository` to raise an exception when the database file is missing or unreadable
+**SO THAT** the failure is surfaced to `main.py` rather than silently returning an empty list
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 5 Building Block View — Contact Repository; ADR-002 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Database file does not exist
+**Scenario ID**: CONTACT-BE-002.1-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling
+
+**GIVEN**
+- the path configured for the SQLite file does not exist
+
+**WHEN**
+- `ContactRepository.get_birthday_contacts(today)` is called
+
+**THEN**
+- an exception is raised
+- the exception is not swallowed inside `contact_repository.py`
+- it propagates to `main.py`
+
+#### SCENARIO 2: Database file is present but unreadable
+**Scenario ID**: CONTACT-BE-002.1-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling
+
+**GIVEN**
+- the SQLite file exists but cannot be opened (e.g., permissions error or corrupt file)
+
+**WHEN**
+- `ContactRepository.get_birthday_contacts(today)` is called
+
+**THEN**
+- an exception is raised and propagates to `main.py`
+- no partial result is returned
+
+---
+
+### CONTACT-BE-002.2
+**AS A** system
+**I WANT** `main.py` to catch any exception from `ContactRepository`, log an ERROR, and exit with code 1
+**SO THAT** the OS scheduler detects the failure via the non-zero exit code
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 5 Building Block View — Main / Runner; ADR-005 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Repository exception is caught and logged
+**Scenario ID**: CONTACT-BE-002.2-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 5 Building Block View — Main / Runner
+
+**GIVEN**
+- `ContactRepository.get_birthday_contacts(today)` raises an exception
+
+**WHEN**
+- `main.py` executes the pipeline
+
+**THEN**
+- the exception is caught at the top level of `main.py`
+- an ERROR log entry is written to stdout identifying the failure
+- `sys.exit(1)` is called
+- no greeting composition or delivery is attempted
+
+#### SCENARIO 2: Malformed row exception is caught and logged
+**Scenario ID**: CONTACT-BE-002.2-S2
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 5 Building Block View — Contact Repository
+
+**GIVEN**
+- the database is accessible
+- row mapping raises an exception due to a missing required field
+
+**WHEN**
+- `main.py` executes the pipeline
+
+**THEN**
+- the exception propagates to `main.py` and is caught
+- an ERROR log entry is written to stdout
+- the container exits with code 1
+- no partial send occurs for any contact
+
+---
+
+## E2E Sub-Story
+
+### CONTACT-E2E-002.1
+**AS A** developer
+**I WANT** to verify that a full container run with no database present exits with code 1 and logs the error to stdout
+**SO THAT** the end-to-end failure path is confirmed in the real Dockerised environment
+
+**Architecture Reference:** Chapter 7 Deployment View — Deployment Steps; Chapter 8 Cross-cutting Concepts — Error Handling; Chapter 6 Runtime View — Email Delivery Failure (error propagation pattern)
+
+#### SCENARIO 1: Container run with missing DB exits with code 1
+**Scenario ID**: CONTACT-E2E-002.1-S1
+**Architecture Reference**: Chapter 7 Deployment View — Deployment Steps; Chapter 8 Cross-cutting Concepts — Error Handling
+
+**GIVEN**
+- the Docker image has been built
+- all required email environment variables are passed via `docker run -e`
+- no SQLite database file is mounted or pre-seeded in the image
+
+**WHEN**
+- `docker run -e EMAIL_HOST=... <image> python main.py` is executed
+
+**THEN**
+- an ERROR log entry identifying the missing database is visible in the `docker run` stdout
+- the container exits with code 1
+- no email delivery is attempted
+
+---
+
+## Traceability Summary
+
+| Field | Value |
+|-------|-------|
+| Parent Story | `CONTACT-STORY-002` |
+| Backend Sub-Stories | `CONTACT-BE-002.1`, `CONTACT-BE-002.2` |
+| Infrastructure Sub-Stories | `CONTACT-INFRA-002.1` |
+| E2E Sub-Story | `CONTACT-E2E-002.1` |
+| Architecture References | Chapter 5 Building Block View — Contact Repository / Main Runner, Chapter 6 Runtime View — Email Delivery Failure, Chapter 7 Deployment View — Deployment Steps, Chapter 8 Cross-cutting Concepts — Error Handling / Testability, Chapter 9 ADR-002 / ADR-004 / ADR-005 |
+| Testable Outcomes | missing DB → exception raised and not swallowed in repository; unreadable DB → exception propagates; malformed row → exception propagates; `main.py` catches all repository exceptions, logs ERROR to stdout, exits with code 1; no partial send on any error path; error-path pytest suite passes inside container; full `docker run` with no DB → exit code 1 and ERROR visible in stdout |

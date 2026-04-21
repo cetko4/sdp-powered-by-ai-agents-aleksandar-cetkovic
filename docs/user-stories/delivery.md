@@ -217,24 +217,29 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Logging
 
 **GIVEN**
-- the container is running and a greeting message is sent successfully
+- the Docker image has been built
+- all required email environment variables are passed via `docker run -e`
+- a contact with a birthday today exists in the database
 
 **WHEN**
-- `EmailSender.send(message)` returns without error
+- `docker run -e EMAIL_HOST=... <image> python main.py` is executed and `EmailSender.send(message)` returns without error
 
 **THEN**
 - an INFO log entry is written to stdout identifying the recipient
-- the log is visible in `docker run` terminal output
+- the log is visible in the `docker run` terminal output
+- the container exits with code 0
 
 #### SCENARIO 2: Failed send is logged at ERROR to stdout
 **Scenario ID**: DELIVERY-INFRA-001.3-S2
 **Architecture Reference**: Chapter 8 Cross-cutting Concepts — Logging; Chapter 8 Cross-cutting Concepts — Error Handling
 
 **GIVEN**
-- `EmailSender.send(message)` raises an exception inside the container
+- the Docker image has been built
+- all required email environment variables are passed via `docker run -e`
+- the external email service is unreachable
 
 **WHEN**
-- `main.py` catches the exception
+- `docker run -e EMAIL_HOST=... <image> python main.py` is executed and `EmailSender.send(message)` raises an exception
 
 **THEN**
 - an ERROR log entry including contact details and failure reason is written to stdout
