@@ -1,3 +1,4 @@
+import sqlite3
 import sys
 from datetime import date
 from pathlib import Path
@@ -6,6 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app.birthday_match import is_birthday_today
 from app.contact import Contact
+from app.contact_repository import ContactRepository
 from app.greeting_service import GreetingService
 
 
@@ -26,18 +28,20 @@ def test_greeting_be_002_1_s1_feb29_contact_matches_feb28_in_non_leap_year():
 # Story: GREETING-STORY-002
 # Scenario: GREETING-STORY-002-S1
 def test_greeting_story_002_s1_feb29_contact_greeted_on_feb28_non_leap_year():
-    # GIVEN a contact born on Feb 29 and today is Feb 28 in a non-leap year
-    contact = Contact(name="Bob", email="bob@example.com", dob=date(1992, 2, 29))
-    today = date(2026, 2, 28)  # 2026 is not a leap year
+    # GIVEN a contact born on Feb 29 stored in the database
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE contacts (name TEXT, email TEXT, dob TEXT)")
+    conn.execute("INSERT INTO contacts VALUES (?, ?, ?)", ("Bob", "bob@example.com", "1992-02-29"))
+    conn.commit()
+    today = date(2026, 2, 28)  # non-leap year
 
-    # WHEN the birthday check is evaluated and a greeting is composed
-    matched = is_birthday_today(contact.dob, today)
-    message = GreetingService().compose(contact) if matched else None
+    # WHEN the pipeline fetches contacts and composes a greeting
+    contacts = ContactRepository(conn).get_birthday_contacts(today)
+    messages = [GreetingService().compose(c) for c in contacts]
 
-    # THEN the contact is matched and a greeting message is produced
-    assert matched is True  # nosec B101
-    assert message is not None  # nosec B101
-    assert "Bob" in message.body  # nosec B101
+    # THEN the Feb 29 contact is selected and a greeting is produced
+    assert len(messages) == 1  # nosec B101
+    assert "Bob" in messages[0].body  # nosec B101
 
 
 # Story: GREETING-STORY-002

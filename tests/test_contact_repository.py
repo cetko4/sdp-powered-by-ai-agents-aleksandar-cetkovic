@@ -76,3 +76,24 @@ def test_contact_be_001_2_s1_row_is_mapped_to_contact_with_typed_dob():
     assert contact.email == "alice@example.com"  # nosec B101
     assert contact.dob == date(1990, 4, 17)  # nosec B101
     assert isinstance(contact.dob, date)  # nosec B101
+
+
+# Story: GREETING-STORY-002 / Scenario: GREETING-STORY-002-S1
+def test_greeting_story_002_s1_repository_returns_feb29_contact_on_feb28_non_leap_year():
+    # GIVEN a contact born on Feb 29 in the database
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE contacts (name TEXT, email TEXT, dob TEXT)")
+    conn.execute(
+        "INSERT INTO contacts VALUES (?, ?, ?)",
+        ("Bob", "bob@example.com", "1992-02-29"),
+    )
+    conn.commit()
+    today = date(2026, 2, 28)  # non-leap year
+
+    # WHEN get_birthday_contacts is called with Feb 28 in a non-leap year
+    repo = ContactRepository(conn)
+    results = repo.get_birthday_contacts(today)
+
+    # THEN the Feb 29 contact is returned (Feb 28 substitution applied in repository)
+    assert len(results) == 1  # nosec B101
+    assert results[0].name == "Bob"  # nosec B101
