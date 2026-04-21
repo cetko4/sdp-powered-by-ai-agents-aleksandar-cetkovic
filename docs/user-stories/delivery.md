@@ -68,77 +68,6 @@
 
 ---
 
-## Frontend Sub-Stories
-
-The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
-
----
-
-## Backend Sub-Stories
-
-### DELIVERY-BE-001.1
-**AS A** system
-**I WANT** to transmit a greeting message to the external email service using the configured protocol
-**SO THAT** the recipient's inbox receives the email
-
-**Architecture Reference:** Chapter 5 Building Block View — Email Sender; ADR-003 (Chapter 9 Architecture Decisions)
-
-#### SCENARIO 1: Message is sent via SMTP or API
-**Scenario ID**: DELIVERY-BE-001.1-S1
-**Architecture Reference**: Chapter 5 Building Block View — Email Sender; ADR-003 (Chapter 9 Architecture Decisions)
-
-**GIVEN**
-- a Message object with recipient address and body is available
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, and `EMAIL_SENDER` are set
-
-**WHEN**
-- `EmailSender.send(message)` is called
-
-**THEN**
-- the message is submitted to the external service using the configured host and credentials
-- no credentials appear in log output or source code
-
-#### SCENARIO 2: Exception propagates on delivery failure
-**Scenario ID**: DELIVERY-BE-001.1-S2
-**Architecture Reference**: Chapter 6 Runtime View — Email Delivery Failure; Chapter 8 Cross-cutting Concepts — Error Handling
-
-**GIVEN**
-- the external email service returns an error or is unreachable
-
-**WHEN**
-- `EmailSender.send(message)` is called
-
-**THEN**
-- an exception is raised by `EmailSender`
-- the exception is not swallowed inside `email_sender.py`
-- it propagates to `main.py` for centralized handling
-
----
-
-### DELIVERY-BE-001.2
-**AS A** system
-**I WANT** `main.py` to orchestrate sending for every contact returned by the repository
-**SO THAT** no birthday contact is skipped
-
-**Architecture Reference:** Chapter 5 Building Block View — Main / Runner; Chapter 6 Runtime View — Successful Birthday Greeting
-
-#### SCENARIO 1: All contacts receive a send call
-**Scenario ID**: DELIVERY-BE-001.2-S1
-**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting
-
-**GIVEN**
-- `ContactRepository` returns a list of N contacts
-- a message has been composed for each contact by `GreetingService`
-
-**WHEN**
-- `main.py` iterates over the contact list
-
-**THEN**
-- `EmailSender.send(message)` is called exactly N times
-- each call uses the message composed for the corresponding contact
-
----
-
 ## Infrastructure Sub-Stories
 
 ### DELIVERY-INFRA-001.1
@@ -244,6 +173,77 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 **THEN**
 - an ERROR log entry including contact details and failure reason is written to stdout
 - the container exits with code 1
+
+---
+
+## Backend Sub-Stories
+
+### DELIVERY-BE-001.1
+**AS A** system
+**I WANT** to transmit a greeting message to the external email service using the configured protocol
+**SO THAT** the recipient's inbox receives the email
+
+**Architecture Reference:** Chapter 5 Building Block View — Email Sender; ADR-003 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Message is sent via SMTP or API
+**Scenario ID**: DELIVERY-BE-001.1-S1
+**Architecture Reference**: Chapter 5 Building Block View — Email Sender; ADR-003 (Chapter 9 Architecture Decisions)
+
+**GIVEN**
+- a Message object with recipient address and body is available
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`, and `EMAIL_SENDER` are set
+
+**WHEN**
+- `EmailSender.send(message)` is called
+
+**THEN**
+- the message is submitted to the external service using the configured host and credentials
+- no credentials appear in log output or source code
+
+#### SCENARIO 2: Exception propagates on delivery failure
+**Scenario ID**: DELIVERY-BE-001.1-S2
+**Architecture Reference**: Chapter 6 Runtime View — Email Delivery Failure; Chapter 8 Cross-cutting Concepts — Error Handling
+
+**GIVEN**
+- the external email service returns an error or is unreachable
+
+**WHEN**
+- `EmailSender.send(message)` is called
+
+**THEN**
+- an exception is raised by `EmailSender`
+- the exception is not swallowed inside `email_sender.py`
+- it propagates to `main.py` for centralized handling
+
+---
+
+### DELIVERY-BE-001.2
+**AS A** system
+**I WANT** `main.py` to orchestrate sending for every contact returned by the repository
+**SO THAT** no birthday contact is skipped
+
+**Architecture Reference:** Chapter 5 Building Block View — Main / Runner; Chapter 6 Runtime View — Successful Birthday Greeting
+
+#### SCENARIO 1: All contacts receive a send call
+**Scenario ID**: DELIVERY-BE-001.2-S1
+**Architecture Reference**: Chapter 6 Runtime View — Successful Birthday Greeting
+
+**GIVEN**
+- `ContactRepository` returns a list of N contacts
+- a message has been composed for each contact by `GreetingService`
+
+**WHEN**
+- `main.py` iterates over the contact list
+
+**THEN**
+- `EmailSender.send(message)` is called exactly N times
+- each call uses the message composed for the corresponding contact
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
 
 ---
 
