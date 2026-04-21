@@ -11,6 +11,34 @@ from app.contact_repository import ContactRepository
 from app.greeting_service import GreetingService
 
 
+# Story: GREETING-STORY-001 / Sub-story: GREETING-BE-001.1
+# Scenario: GREETING-BE-001.1-S1
+def test_greeting_be_001_1_s1_month_and_day_match_contact_is_selected():
+    # GIVEN a contact whose birth month and day match today
+    dob = date(1990, 6, 15)
+    today = date(2026, 6, 15)
+
+    # WHEN the birthday check is evaluated
+    result = is_birthday_today(dob, today)
+
+    # THEN the result is a positive match (year is not considered)
+    assert result is True  # nosec B101
+
+
+# Story: GREETING-STORY-001 / Sub-story: GREETING-BE-001.1
+# Scenario: GREETING-BE-001.1-S2
+def test_greeting_be_001_1_s2_month_and_day_do_not_match_contact_is_excluded():
+    # GIVEN a contact whose birth month and day do not match today
+    dob = date(1990, 6, 15)
+    today = date(2026, 7, 15)
+
+    # WHEN the birthday check is evaluated
+    result = is_birthday_today(dob, today)
+
+    # THEN the result is a negative match
+    assert result is False  # nosec B101
+
+
 # Story: GREETING-STORY-002 / Sub-story: GREETING-BE-002.1
 # Scenario: GREETING-BE-002.1-S1
 def test_greeting_be_002_1_s1_feb29_contact_matches_feb28_in_non_leap_year():
