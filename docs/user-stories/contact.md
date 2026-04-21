@@ -62,75 +62,6 @@
 
 ---
 
-## Frontend Sub-Stories
-
-The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
-
----
-
-## Backend Sub-Stories
-
-### CONTACT-BE-001.1
-**AS A** system
-**I WANT** to query the SQLite database for contacts matching today's month and day
-**SO THAT** only relevant contacts are returned to the pipeline
-
-**Architecture Reference:** Chapter 5 Building Block View — Contact Repository; ADR-002 (Chapter 9 Architecture Decisions)
-
-#### SCENARIO 1: Query returns matching rows
-**Scenario ID**: CONTACT-BE-001.1-S1
-**Architecture Reference**: Chapter 5 Building Block View — Contact Repository
-
-**GIVEN**
-- a SQLite connection is available (real or injected fake)
-- the contacts table contains rows where `strftime('%m-%d', dob)` equals today's month-day
-
-**WHEN**
-- the SELECT query is executed
-
-**THEN**
-- only rows matching today's month and day are returned
-- year is not considered in the comparison
-
-#### SCENARIO 2: Query returns no rows
-**Scenario ID**: CONTACT-BE-001.1-S2
-**Architecture Reference**: Chapter 6 Runtime View — No Birthdays Today
-
-**GIVEN**
-- a SQLite connection is available
-- no rows match today's month and day
-
-**WHEN**
-- the SELECT query is executed
-
-**THEN**
-- an empty result set is returned
-- no exception is raised
-
----
-
-### CONTACT-BE-001.2
-**AS A** system
-**I WANT** to map each database row to a Contact object
-**SO THAT** downstream components work with a typed domain object rather than raw tuples
-
-**Architecture Reference:** Chapter 5 Building Block View — Contact Repository; Chapter 12 Glossary — Contact
-
-#### SCENARIO 1: Row is mapped to a Contact
-**Scenario ID**: CONTACT-BE-001.2-S1
-**Architecture Reference**: Chapter 5 Building Block View — Contact Repository
-
-**GIVEN**
-- a database row contains name, email, and date of birth fields
-
-**WHEN**
-- the repository maps the row to a domain object
-
-**THEN**
-- a Contact object is returned with the correct name, email, and date of birth values
-
----
-
 ## Infrastructure Sub-Stories
 
 ### CONTACT-INFRA-001.1
@@ -222,6 +153,75 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 ---
 
+## Backend Sub-Stories
+
+### CONTACT-BE-001.1
+**AS A** system
+**I WANT** to query the SQLite database for contacts matching today's month and day
+**SO THAT** only relevant contacts are returned to the pipeline
+
+**Architecture Reference:** Chapter 5 Building Block View — Contact Repository; ADR-002 (Chapter 9 Architecture Decisions)
+
+#### SCENARIO 1: Query returns matching rows
+**Scenario ID**: CONTACT-BE-001.1-S1
+**Architecture Reference**: Chapter 5 Building Block View — Contact Repository
+
+**GIVEN**
+- a SQLite connection is available (real or injected fake)
+- the contacts table contains rows where `strftime('%m-%d', dob)` equals today's month-day
+
+**WHEN**
+- the SELECT query is executed
+
+**THEN**
+- only rows matching today's month and day are returned
+- year is not considered in the comparison
+
+#### SCENARIO 2: Query returns no rows
+**Scenario ID**: CONTACT-BE-001.1-S2
+**Architecture Reference**: Chapter 6 Runtime View — No Birthdays Today
+
+**GIVEN**
+- a SQLite connection is available
+- no rows match today's month and day
+
+**WHEN**
+- the SELECT query is executed
+
+**THEN**
+- an empty result set is returned
+- no exception is raised
+
+---
+
+### CONTACT-BE-001.2
+**AS A** system
+**I WANT** to map each database row to a Contact object
+**SO THAT** downstream components work with a typed domain object rather than raw tuples
+
+**Architecture Reference:** Chapter 5 Building Block View — Contact Repository; Chapter 12 Glossary — Contact
+
+#### SCENARIO 1: Row is mapped to a Contact
+**Scenario ID**: CONTACT-BE-001.2-S1
+**Architecture Reference**: Chapter 5 Building Block View — Contact Repository
+
+**GIVEN**
+- a database row contains name, email, and date of birth fields
+
+**WHEN**
+- the repository maps the row to a domain object
+
+**THEN**
+- a Contact object is returned with the correct name, email, and date of birth values
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
+
+---
+
 ## Traceability Summary
 
 | Field | Value |
@@ -280,12 +280,6 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 - an exception is raised for the malformed row
 - `main.py` logs an ERROR entry and exits with code 1
 - no partial greeting is sent
-
----
-
-## Frontend Sub-Stories
-
-The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
 
 ---
 
@@ -410,6 +404,12 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 - an ERROR log entry is written to stdout
 - the container exits with code 1
 - no partial send occurs for any contact
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
 
 ---
 

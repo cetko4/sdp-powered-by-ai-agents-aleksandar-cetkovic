@@ -47,79 +47,6 @@
 
 ---
 
-## Frontend Sub-Stories
-
-The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
-
----
-
-## Backend Sub-Stories
-
-### GREETING-BE-001.1
-**AS A** system
-**I WANT** to determine whether today matches a contact's birthday by comparing month and day
-**SO THAT** only contacts with a birthday today are selected for greeting
-
-**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 10 Quality Requirements — QS-1
-
-#### SCENARIO 1: Month and day match — contact is selected
-**Scenario ID**: GREETING-BE-001.1-S1
-**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling
-
-**GIVEN**
-- a contact record contains a valid date of birth
-- today's month and day are equal to the contact's birth month and day
-
-**WHEN**
-- the birthday check is evaluated
-
-**THEN**
-- the result is a positive match
-- the contact is included in the greeting pipeline
-- the birth year is not considered in the comparison
-
-#### SCENARIO 2: Month and day do not match — contact is excluded
-**Scenario ID**: GREETING-BE-001.1-S2
-**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — No Birthdays Today
-
-**GIVEN**
-- a contact record contains a valid date of birth
-- today's month and day do not equal the contact's birth month and day
-
-**WHEN**
-- the birthday check is evaluated
-
-**THEN**
-- the result is a negative match
-- the contact is excluded from the greeting pipeline
-
----
-
-### GREETING-BE-001.2
-**AS A** system
-**I WANT** to compose a personalized greeting message for each contact identified as having a birthday today
-**SO THAT** the delivery component receives a complete, ready-to-send message
-
-**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — Successful Birthday Greeting; Chapter 10 Quality Requirements — QS-1
-
-#### SCENARIO 1: Greeting message is composed for a matching contact
-**Scenario ID**: GREETING-BE-001.2-S1
-**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 10 Quality Requirements — QS-1
-
-**GIVEN**
-- a contact has been identified as having a birthday today
-- the contact's name is available
-
-**WHEN**
-- `GreetingService.compose(contact)` is called
-
-**THEN**
-- a Message object is returned containing the contact's name and a greeting body
-- the message is ready to be passed to `EmailSender`
-- no database or network access occurs during composition
-
----
-
 ## Infrastructure Sub-Stories
 
 ### GREETING-INFRA-001.1
@@ -199,6 +126,79 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 ---
 
+## Backend Sub-Stories
+
+### GREETING-BE-001.1
+**AS A** system
+**I WANT** to determine whether today matches a contact's birthday by comparing month and day
+**SO THAT** only contacts with a birthday today are selected for greeting
+
+**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 10 Quality Requirements — QS-1
+
+#### SCENARIO 1: Month and day match — contact is selected
+**Scenario ID**: GREETING-BE-001.1-S1
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 8 Cross-cutting Concepts — Date Handling
+
+**GIVEN**
+- a contact record contains a valid date of birth
+- today's month and day are equal to the contact's birth month and day
+
+**WHEN**
+- the birthday check is evaluated
+
+**THEN**
+- the result is a positive match
+- the contact is included in the greeting pipeline
+- the birth year is not considered in the comparison
+
+#### SCENARIO 2: Month and day do not match — contact is excluded
+**Scenario ID**: GREETING-BE-001.1-S2
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — No Birthdays Today
+
+**GIVEN**
+- a contact record contains a valid date of birth
+- today's month and day do not equal the contact's birth month and day
+
+**WHEN**
+- the birthday check is evaluated
+
+**THEN**
+- the result is a negative match
+- the contact is excluded from the greeting pipeline
+
+---
+
+### GREETING-BE-001.2
+**AS A** system
+**I WANT** to compose a personalized greeting message for each contact identified as having a birthday today
+**SO THAT** the delivery component receives a complete, ready-to-send message
+
+**Architecture Reference:** Chapter 5 Building Block View — Greeting Service; Chapter 6 Runtime View — Successful Birthday Greeting; Chapter 10 Quality Requirements — QS-1
+
+#### SCENARIO 1: Greeting message is composed for a matching contact
+**Scenario ID**: GREETING-BE-001.2-S1
+**Architecture Reference**: Chapter 5 Building Block View — Greeting Service; Chapter 10 Quality Requirements — QS-1
+
+**GIVEN**
+- a contact has been identified as having a birthday today
+- the contact's name is available
+
+**WHEN**
+- `GreetingService.compose(contact)` is called
+
+**THEN**
+- a Message object is returned containing the contact's name and a greeting body
+- the message is ready to be passed to `EmailSender`
+- no database or network access occurs during composition
+
+---
+
+## Frontend Sub-Stories
+
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
+
+---
+
 ## Traceability Summary
 
 | Field | Value |
@@ -275,9 +275,30 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 ---
 
-## Frontend Sub-Stories
+## Infrastructure Sub-Stories
 
-The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
+### GREETING-INFRA-002.1
+**AS A** developer
+**I WANT** the leap-year edge-case tests to run inside the Docker container
+**SO THAT** the Feb 28/29 substitution rule is verified in the same environment as all other tests
+
+**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 8 Cross-cutting Concepts — Testability
+
+#### SCENARIO 1: Leap-year tests are discovered and pass inside the container
+**Scenario ID**: GREETING-INFRA-002.1-S1
+**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability
+
+**GIVEN**
+- the Docker image has been built
+- test files covering the Feb 28/29 rule follow the `test_*.py` naming convention under `tests/`
+
+**WHEN**
+- `docker run <image> pytest` is executed
+
+**THEN**
+- pytest discovers and runs the leap-year scenario tests
+- all three scenarios (non-leap match, leap match, leap non-match) pass
+- the container exits with code 0
 
 ---
 
@@ -322,30 +343,9 @@ The Birthday Greetings system has no user-facing interface (Chapter 3 Context an
 
 ---
 
-## Infrastructure Sub-Stories
+## Frontend Sub-Stories
 
-### GREETING-INFRA-002.1
-**AS A** developer
-**I WANT** the leap-year edge-case tests to run inside the Docker container
-**SO THAT** the Feb 28/29 substitution rule is verified in the same environment as all other tests
-
-**Architecture Reference:** Chapter 8 Cross-cutting Concepts — Date Handling; Chapter 8 Cross-cutting Concepts — Testability
-
-#### SCENARIO 1: Leap-year tests are discovered and pass inside the container
-**Scenario ID**: GREETING-INFRA-002.1-S1
-**Architecture Reference**: Chapter 8 Cross-cutting Concepts — Testability
-
-**GIVEN**
-- the Docker image has been built
-- test files covering the Feb 28/29 rule follow the `test_*.py` naming convention under `tests/`
-
-**WHEN**
-- `docker run <image> pytest` is executed
-
-**THEN**
-- pytest discovers and runs the leap-year scenario tests
-- all three scenarios (non-leap match, leap match, leap non-match) pass
-- the container exits with code 0
+The Birthday Greetings system has no user-facing interface (Chapter 3 Context and Scope). No frontend sub-stories are applicable.
 
 ---
 
