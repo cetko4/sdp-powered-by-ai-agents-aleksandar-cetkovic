@@ -15,4 +15,4 @@ For Module 2, the repository will include software architecture documentation fo
 - [ ] Module 3: Software Requirements — user story derivation agent
 - [ ] Module 4: CI/CD — deployment pipeline agent
 - [ ] Module 5: TDD/BDD — multi-agent test system
-- [ ] Module 6: Subscription Platform — team project using all agents
+- [ ] Module 6: Birthday Greetings — project using all agents
